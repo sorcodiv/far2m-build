@@ -10,6 +10,16 @@ jobs:
     runs-on: ubuntu-20.04
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
+      - name: Add build dependencies
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          PACKAGES: >
+            zip unzip make pkg-config patchelf cmake g++ libuchardet-dev
+            libluajit-5.1-dev uuid-dev libsmbclient-dev libneon27-dev
+            libssh-dev libnfs-dev libwxgtk3.0-gtk3-dev libsqlite3-dev
+            libarchive-dev luarocks libonig-dev file gawk git libxml2-dev patch wget
+        run: |
+          luarocks install lrexlib-oniguruma --lua-version 5.1
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4
       - uses: actions/checkout@v4
