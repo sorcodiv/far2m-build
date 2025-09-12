@@ -1,0 +1,32 @@
+name: build
+
+on:
+  workflow_dispatch: # Allows you to run this workflow manually from the Actions tab
+  schedule:
+    - cron: "0 0 1 * *" # minute (0 - 59) hour (0 - 23) day of the month (1 - 31) month (1 - 12 or JAN-DEC) day of the week (0 - 6 or SUN-SAT)
+
+jobs:
+  build-portable:
+    runs-on: ubuntu-20.04
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: 'shmuz/far2m'
+          path: far2m
+      - uses: actions/checkout@v4
+        with:
+          repository: 'shmuz/luafar2m'
+          path: luafar2m
+      - name: Build far2m
+        env:
+          SAVE_SRC: YES
+        run: sh -x build_far2m.sh
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: far2m
+          path: ./far2m-*.zip
+          if-no-files-found: error
