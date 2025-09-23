@@ -23,7 +23,7 @@ if [ "$SAVE_SRC" = "YES" ]; then
   zip -r "luafar2m-src-$LUAPLG_DATE-$LUAPLG_COMMIT-(far2m-$FAR2M_DATE-$FAR2M_COMMIT).zip" luafar2m >/dev/null
 fi
 
-PLG_COLORER="-DCOLORER=no"
+PLG_COLORER="-DCOLORER=yes"
 PLG_HIGHLIGHT="-DHIGHLIGHT=yes"
 PLG_POLYGON="-DPOLYGON=yes"
 PLG_WX="-DUSEWX=yes"
@@ -43,8 +43,8 @@ esac
 if [ "$LIBC" = "glibc" ]; then
   EXCLUDE_LIB="libdl.so.2|libpthread.so.0|libstdc\+\+.so.6|libgcc_s.so.1|libc.so.6|libm.so.6|libresolv.so.2|librt.so.1|libX11.so.6|libxcb.so.1|libXau.so.6|libXdmcp.so.6|libbsd.so.0"
   CP_OPTS="--preserve=timestamps"
-  if [ "$CODENAME" = "focal" ]; then
-    PLG_COLORER="-DCOLORER=yes"
+  if [ "$CODENAME" = "xenial" ]; then
+    PLG_COLORER="-DCOLORER=no"
   fi
 elif [ "$LIBC" = "musl" ]; then
   EXCLUDE_LIB="ld-musl-$MACHINE.so.1|libstdc\+\+.so.6|libgcc_s.so.1|libc.musl-$MACHINE.so.1"
@@ -73,9 +73,11 @@ patch_lib()
     break
   done
   if [ $cnt -gt 0 ]; then
+    mtime=$(stat -c %y $file)
+    if [ "$LIBC" = "musl" ]; then mtime=${mtime::19}; fi
     patchelf --remove-rpath $file
     patchelf --set-rpath "\$ORIGIN" $file
-    touch -c -m --date "$TOUCH_DATE" $file
+    touch -c -m --date "$mtime" $file
   fi
 }
 
@@ -99,32 +101,56 @@ if [ $? -ne 0 ]; then exit 1; fi
 cmake --build $REPO_DIR/luafar2m/$BUILD_DIR -- -j$(nproc)
 if [ $? -ne 0 ]; then exit 1; fi
 
-rex_onig_so=$(find /usr/lib /usr/local -name rex_onig.so 2>/dev/null | tail -n 1)
+find $REPO_DIR/far2m/$BUILD_DIR/install/ -type f -exec touch -c -m --date "$TOUCH_DATE" {} \;
+for link in $(find $REPO_DIR/far2m/$BUILD_DIR/install/ -type l) ; do touch -h -c -m -r $(readlink -f $link) $link; done
+find $REPO_DIR/far2m/$BUILD_DIR/install/ -type d -exec touch -c -m --date "$TOUCH_DATE" {} \;
 
-if [ ! -z $rex_onig_so ]; then
+find $REPO_DIR/luafar2m/$BUILD_DIR/install/ -type f -exec touch -c -m --date "$TOUCH_DATE" {} \;
+for link in $(find $REPO_DIR/luafar2m/$BUILD_DIR/install/ -type l) ; do touch -h -c -m -r $(readlink -f $link) $link; done
+find $REPO_DIR/luafar2m/$BUILD_DIR/install/ -type d -exec touch -c -m --date "$TOUCH_DATE" {} \;
+
+if [ $(find /usr/lib /usr/local -name rex_onig.so 2>/dev/null | wc -l) -gt 1 ]; then
+  so_rex_onig=$(find /usr/lib /usr/local -name rex_onig.so 2>/dev/null | grep "5.1")
+else
+  so_rex_onig=$(find /usr/lib /usr/local -name rex_onig.so 2>/dev/null)
+fi
+if [ ! -z $so_rex_onig ]; then
+  cp -L $CP_OPTS $so_rex_onig $REPO_DIR/far2m/$BUILD_DIR/install/
+  if [ -z $CP_OPTS ]; then touch -c -m -r $so_rex_onig $REPO_DIR/far2m/$BUILD_DIR/install/rex_onig.so; fi
+fi
+
+so_lua=$(find /usr/lib -name libluajit-5.1.so 2>/dev/null)
+if [ ! -z $so_lua ]; then
+  cp -L $CP_OPTS $so_lua $REPO_DIR/far2m/$BUILD_DIR/install/
+  if [ -z $CP_OPTS ]; then touch -c -m -r $so_lua $REPO_DIR/far2m/$BUILD_DIR/install/libluajit-5.1.so; fi
+else
+  so_lua=$(find /usr/lib -name liblua5.1.so 2>/dev/null)
+  cp -L $CP_OPTS $so_lua $REPO_DIR/far2m/$BUILD_DIR/install/
+  if [ -z $CP_OPTS ]; then touch -c -m -r $so_lua $REPO_DIR/far2m/$BUILD_DIR/install/liblua5.1.so; fi
+fi
+
+so_7z=$(find /usr/lib -name 7z.so 2>/dev/null)
+if [ ! -z $so_7z ]; then
+  cp -L $CP_OPTS $so_7z $REPO_DIR/far2m/$BUILD_DIR/install/Plugins/arclite/plug/
+  if [ -z $CP_OPTS ]; then touch -c -m -r $so_7z $REPO_DIR/far2m/$BUILD_DIR/install/Plugins/arclite/plug/7z.so; fi
+fi
+
+if [ ! -z $so_rex_onig ]; then
+  sed -i '1ipackage.cpath = package.cpath .. ";"..win.GetEnv("FARHOME").."/rex_onig.so"' $REPO_DIR/luafar2m/$BUILD_DIR/install/lfsearch/plug/lfs_common.lua
+  touch -c -m --date "$TOUCH_DATE" $REPO_DIR/luafar2m/$BUILD_DIR/install/lfsearch/plug/lfs_common.lua
   if [ "$PLG_HIGHLIGHT" = "-DHIGHLIGHT=yes" ]; then
     sed -i '1ipackage.cpath = package.cpath .. ";"..win.GetEnv("FARHOME").."/rex_onig.so"' $REPO_DIR/luafar2m/$BUILD_DIR/install/highlight/plug/highlight.lua
-    sed -i '1ipackage.cpath = package.cpath .. ";"..win.GetEnv("FARHOME").."/rex_onig.so"' $REPO_DIR/luafar2m/$BUILD_DIR/install/lfsearch/plug/lfs_common.lua
-    if [ "$PLG_COLORER" = "-DCOLORER=no" ]; then
-      mv $REPO_DIR/luafar2m/$BUILD_DIR/install/highlight $REPO_DIR/far2m/$BUILD_DIR/install/Plugins/highlight
+    if [ "$PLG_COLORER" = "-DCOLORER=yes" ]; then
+      sed -i 's/if Config.On==nil then Config.On=true end -- default=true/if Config.On==nil then Config.On=false end -- default=true/' $REPO_DIR/luafar2m/$BUILD_DIR/install/highlight/plug/highlight.lua
     fi
+    touch -c -m --date "$TOUCH_DATE" $REPO_DIR/luafar2m/$BUILD_DIR/install/highlight/plug/highlight.lua
+    mv $REPO_DIR/luafar2m/$BUILD_DIR/install/highlight $REPO_DIR/far2m/$BUILD_DIR/install/Plugins/highlight
   fi
 fi
 if [ "$PLG_POLYGON" = "-DPOLYGON=yes" ]; then
   mv $REPO_DIR/luafar2m/$BUILD_DIR/install/polygon $REPO_DIR/far2m/$BUILD_DIR/install/Plugins/polygon
 fi
 mv $REPO_DIR/luafar2m/$BUILD_DIR/install/lfsearch $REPO_DIR/far2m/$BUILD_DIR/install/Plugins/lfsearch
-
-find $REPO_DIR/far2m/$BUILD_DIR/install/ -type f -exec touch -c -m --date "$TOUCH_DATE" {} \;
-for link in $(find $REPO_DIR/far2m/$BUILD_DIR/install/ -type l) ; do touch -h -c -m -r $(readlink -f $link) $link; done
-find $REPO_DIR/far2m/$BUILD_DIR/install/ -type d -exec touch -c -m --date "$TOUCH_DATE" {} \;
-
-if [ ! -z $rex_onig_so ]; then
-  cp -L $CP_OPTS $rex_onig_so $REPO_DIR/far2m/$BUILD_DIR/install/
-  if [ -z $CP_OPTS ]; then touch -c -m -r $rex_onig_so $REPO_DIR/far2m/$BUILD_DIR/install/rex_onig.so; fi
-fi
-cp -L $CP_OPTS $(find /usr/lib -name libluajit-5.1.so 2>/dev/null) $REPO_DIR/far2m/$BUILD_DIR/install/
-if [ -z $CP_OPTS ]; then touch -c -m -r $(find /usr/lib -name libluajit-5.1.so 2>/dev/null) $REPO_DIR/far2m/$BUILD_DIR/install/libluajit-5.1.so; fi
 
 if [ "$LIBC" = "musl" ]; then
   patchelf --replace-needed libluajit-5.1.so.2 libluajit-5.1.so $REPO_DIR/far2m/$BUILD_DIR/install/Plugins/luafar/luamacro/plug/luamacro.far-plug-wide
@@ -133,7 +159,7 @@ if [ "$LIBC" = "musl" ]; then
   touch -c -m --date "$TOUCH_DATE" $REPO_DIR/far2m/$BUILD_DIR/install/Plugins/luafar/hlfviewer/plug/hlfviewer.far-plug-wide
   copy_dependencies $REPO_DIR/far2m/$BUILD_DIR/install/far2m
   patch_lib $REPO_DIR/far2m/$BUILD_DIR/install/far2m
-  if [ ! -z $rex_onig_so ]; then
+  if [ ! -z $so_rex_onig ]; then
     copy_dependencies $REPO_DIR/far2m/$BUILD_DIR/install/rex_onig.so
     patch_lib $REPO_DIR/far2m/$BUILD_DIR/install/rex_onig.so
   fi
@@ -165,8 +191,12 @@ if [ -f $REPO_DIR/far2m/$BUILD_DIR/install/Plugins/multiarc/plug/libarchive.so.*
   rm $REPO_DIR/far2m/$BUILD_DIR/install/Plugins/multiarc/plug/libz.so.*
 fi
 
+if [ -f $REPO_DIR/hook_lib.sh ]; then sh $REPO_DIR/hook_lib.sh; fi
+
 current_path="$(realpath .)"
 cd $REPO_DIR/far2m/$BUILD_DIR/install
-zip --symlinks -m -r "$current_path/far2m-bin-$FAR2M_DATE-$FAR2M_COMMIT-$MACHINE-$LIBC-libs.zip" *.so.* Plugins/NetRocks/plug/*.so.* -x libuchardet.so.* libonig.so.* Plugins/NetRocks/plug/libnfs.so.* Plugins/NetRocks/plug/libssh.so.* Plugins/NetRocks/plug/libneon.so.* Plugins/NetRocks/plug/libssl.so.* Plugins/NetRocks/plug/libcrypto.so.* >/dev/null
+zip --symlinks -m -r "$current_path/far2m-libs-$MACHINE-$LIBC-$CODENAME.zip" *.so.* Plugins/NetRocks/plug/*.so.* -x libuchardet.so.* libonig.so.* libgcc_s.so.* libstdc++.so.* Plugins/NetRocks/plug/libnfs.so.* Plugins/NetRocks/plug/libssh.so.* Plugins/NetRocks/plug/libneon.so.* Plugins/NetRocks/plug/libssl.so.* Plugins/NetRocks/plug/libcrypto.so.* >/dev/null
 zip --symlinks -r "$current_path/far2m-bin-$FAR2M_DATE-$FAR2M_COMMIT-$MACHINE-$LIBC-$CODENAME.zip" . >/dev/null
 cd $current_path
+
+if [ -f $REPO_DIR/hook_zip.sh ]; then sh $REPO_DIR/hook_zip.sh; fi
