@@ -1,5 +1,5 @@
 #!/bin/sh
-#set -x
+set -x
 
 if [ ! -d "far2m" ]; then echo "far2m/ not found" && exit 1; fi
 if [ ! -d "luafar2m" ]; then echo "luafar2m/ not found" && exit 1; fi
@@ -109,9 +109,8 @@ find $REPO_DIR/luafar2m/$BUILD_DIR/install/ -type f -exec touch -c -m --date "$T
 for link in $(find $REPO_DIR/luafar2m/$BUILD_DIR/install/ -type l) ; do touch -h -c -m -r $(readlink -f $link) $link; done
 find $REPO_DIR/luafar2m/$BUILD_DIR/install/ -type d -exec touch -c -m --date "$TOUCH_DATE" {} \;
 
-if [ $(find /usr/lib /usr/local -name rex_onig.so 2>/dev/null | wc -l) -gt 1 ]; then
-  so_rex_onig=$(find /usr/lib /usr/local -name rex_onig.so 2>/dev/null | grep "5.1")
-else
+so_rex_onig=$(find /usr/lib -name rex_onig.so 2>/dev/null | grep 5.1)
+if [ -z $so_rex_onig ]; then
   so_rex_onig=$(find /usr/lib /usr/local -name rex_onig.so 2>/dev/null)
 fi
 if [ ! -z $so_rex_onig ]; then
