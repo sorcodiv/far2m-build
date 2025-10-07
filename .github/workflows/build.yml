@@ -11,7 +11,7 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       - name: Install dependencies
-        run: sudo apt update && sudo apt install -y --no-install-recommends zip unzip make pkg-config patchelf cmake g++ libuchardet-dev libluajit-5.1-dev uuid-dev libsmbclient-dev libneon27-dev libssh-dev libnfs-dev libwxgtk3.2-dev libsqlite3-dev p7zip-full libonig-dev lua-rex-onig file gawk git libxml2-dev patch wget
+        run: sudo apt update && sudo apt install -y --no-install-recommends zip unzip make pkg-config patchelf cmake g++ libuchardet-dev libluajit-5.1-dev uuid-dev libsmbclient-dev libneon27-dev libssh-dev libnfs-dev libwxgtk3.0-gtk3-dev libsqlite3-dev p7zip-full libonig-dev lua-rex-onig file gawk git libxml2-dev patch wget
 
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout source
