@@ -14,13 +14,16 @@ jobs:
         include:
           - distro: ubuntu
             version: '20.04'
+            arch: x86_64
     container: ${{ matrix.distro }}:${{ matrix.version }}
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       - name: Install dependencies
         env:
           DEBIAN_FRONTEND: noninteractive
-        run: apt update && apt install -y --no-install-recommends ca-certificates zip unzip make pkg-config patchelf cmake g++ libuchardet-dev libluajit-5.1-dev uuid-dev libsmbclient-dev libneon27-dev libssh-dev libnfs-dev libwxgtk3.0-gtk3-dev libsqlite3-dev p7zip-full libonig-dev lua-rex-onig file gawk git libxml2-dev patch curl wget
+        run: |
+          apt update && apt install -y --no-install-recommends ca-certificates zip unzip make pkg-config patchelf cmake g++ libuchardet-dev libluajit-5.1-dev uuid-dev libsmbclient-dev libneon27-dev libssh-dev libnfs-dev libwxgtk3.0-gtk3-dev libsqlite3-dev p7zip-full libonig-dev file gawk git libxml2-dev patch curl wget
+          wget http://ftp.debian.org/debian/pool/main/l/lua-rexlib/lua-rex-onig_2.9.1-2+b1_amd64.deb && dpkg -i lua-rex-onig_2.9.1-2+b1_amd64.deb
 
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout source
