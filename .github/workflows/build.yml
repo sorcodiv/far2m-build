@@ -7,11 +7,18 @@ on:
 
 jobs:
   build-portable:
-    runs-on: ubuntu-22.04
+    name: build ${{ matrix.distro }} ${{ matrix.version }} ${{ matrix.arch }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - distro: ubuntu
+            version: '20.04'
+    container: ${{ matrix.distro }}:${{ matrix.version }}
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       - name: Install dependencies
-        run: sudo apt update && sudo apt install -y --no-install-recommends zip unzip make pkg-config patchelf cmake g++ libuchardet-dev libluajit-5.1-dev uuid-dev libsmbclient-dev libneon27-dev libssh-dev libnfs-dev libwxgtk3.0-gtk3-dev libsqlite3-dev p7zip-full libonig-dev lua-rex-onig file gawk git libxml2-dev patch curl wget
+        run: apt update && apt install -y --no-install-recommends zip unzip make pkg-config patchelf cmake g++ libuchardet-dev libluajit-5.1-dev uuid-dev libsmbclient-dev libneon27-dev libssh-dev libnfs-dev libwxgtk3.0-gtk3-dev libsqlite3-dev p7zip-full libonig-dev lua-rex-onig file gawk git libxml2-dev patch curl wget
 
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout source
@@ -37,6 +44,25 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: far2m
+          name: artifact_bin
           path: ./far2m-*.zip
           if-no-files-found: error
+
+  release:
+    needs: [build-portable]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: artifact_bin
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: far2m
+          files: ./*.zip
+          body: far2m binaries
