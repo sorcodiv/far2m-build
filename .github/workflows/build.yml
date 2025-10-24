@@ -20,7 +20,7 @@ jobs:
       - name: Install dependencies
         env:
           DEBIAN_FRONTEND: noninteractive
-        run: apt update && apt install -y --no-install-recommends zip unzip make pkg-config patchelf cmake g++ libuchardet-dev libluajit-5.1-dev uuid-dev libsmbclient-dev libneon27-dev libssh-dev libnfs-dev libwxgtk3.0-gtk3-dev libsqlite3-dev p7zip-full libonig-dev lua-rex-onig file gawk git libxml2-dev patch curl wget
+        run: apt update && apt install -y --no-install-recommends ca-certificates zip unzip make pkg-config patchelf cmake g++ libuchardet-dev libluajit-5.1-dev uuid-dev libsmbclient-dev libneon27-dev libssh-dev libnfs-dev libwxgtk3.0-gtk3-dev libsqlite3-dev p7zip-full libonig-dev lua-rex-onig file gawk git libxml2-dev patch curl wget
 
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout source
