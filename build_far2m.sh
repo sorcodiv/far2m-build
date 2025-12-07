@@ -95,7 +95,7 @@ if [ $? -ne 0 ]; then exit 1; fi
 cmake --build $REPO_DIR/far2m/$BUILD_DIR -- -j$(nproc)
 if [ $? -ne 0 ]; then exit 1; fi
 
-cmake -S $REPO_DIR/luafar2m -B$REPO_DIR/luafar2m/$BUILD_DIR $PLG_HIGHLIGHT $PLG_POLYGON -DLF4ED=no -DLFHISTORY=no -DLFTMP=no -DLUAPANEL=no -DCMAKE_BUILD_TYPE=Release
+cmake -S $REPO_DIR/luafar2m -B$REPO_DIR/luafar2m/$BUILD_DIR $PLG_HIGHLIGHT $PLG_POLYGON -DLF4ED=yes -DLFHISTORY=no -DLFTMP=no -DLUAPANEL=no -DCMAKE_BUILD_TYPE=Release
 if [ $? -ne 0 ]; then exit 1; fi
 
 cmake --build $REPO_DIR/luafar2m/$BUILD_DIR -- -j$(nproc)
@@ -150,6 +150,7 @@ if [ "$PLG_POLYGON" = "-DPOLYGON=yes" ]; then
   mv $REPO_DIR/luafar2m/$BUILD_DIR/install/polygon $REPO_DIR/far2m/$BUILD_DIR/install/Plugins/polygon
 fi
 mv $REPO_DIR/luafar2m/$BUILD_DIR/install/lfsearch $REPO_DIR/far2m/$BUILD_DIR/install/Plugins/lfsearch
+mv $REPO_DIR/luafar2m/$BUILD_DIR/install/lf4ed $REPO_DIR/far2m/$BUILD_DIR/install/Plugins/lf4ed
 
 if [ "$LIBC" = "musl" ]; then
   patchelf --replace-needed libluajit-5.1.so.2 libluajit-5.1.so $REPO_DIR/far2m/$BUILD_DIR/install/Plugins/luafar/luamacro/plug/luamacro.far-plug-wide
@@ -190,7 +191,7 @@ if [ -f $REPO_DIR/far2m/$BUILD_DIR/install/Plugins/multiarc/plug/libarchive.so.*
   rm $REPO_DIR/far2m/$BUILD_DIR/install/Plugins/multiarc/plug/libz.so.*
 fi
 
-if [ -f $REPO_DIR/hook_lib.sh ]; then sh $REPO_DIR/hook_lib.sh; fi
+if [ -f $REPO_DIR/hook_lib.sh ]; then sh -x $REPO_DIR/hook_lib.sh; fi
 
 current_path="$(realpath .)"
 cd $REPO_DIR/far2m/$BUILD_DIR/install
@@ -198,4 +199,4 @@ zip --symlinks -m -r "$current_path/far2m-libs-$MACHINE-$LIBC-$CODENAME.zip" *.s
 zip --symlinks -r "$current_path/far2m-bin-$FAR2M_DATE-$FAR2M_COMMIT-$MACHINE-$LIBC-$CODENAME.zip" . >/dev/null
 cd $current_path
 
-if [ -f $REPO_DIR/hook_zip.sh ]; then sh $REPO_DIR/hook_zip.sh; fi
+if [ -f $REPO_DIR/hook_zip.sh ]; then sh -x $REPO_DIR/hook_zip.sh; fi
